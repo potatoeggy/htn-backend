@@ -1,11 +1,9 @@
-use self::models::{NewUser, User};
-use diesel::prelude::*;
-use diesel::sqlite::SqliteConnection;
-use dotenv;
-use models::{NewSkill, UserForm};
-
 pub mod models;
 pub mod schema;
+
+use diesel::prelude::*;
+use diesel::sqlite::SqliteConnection;
+use models::{NewSkill, NewUser, User, UserForm};
 
 const DEFAULT_PORT: u32 = 8080;
 

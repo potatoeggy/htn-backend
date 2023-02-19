@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 // TODO: figure out how to reduce it
 
 #[derive(Debug, Deserialize, Serialize, Clone, Queryable, Identifiable, Associations)]
-#[belongs_to(User)]
+#[diesel(belongs_to(User))]
 pub struct Skill {
     pub id: i32,
     pub user_id: i32,
@@ -58,7 +58,7 @@ impl From<(User, Vec<Skill>)> for UserWithSkills {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, AsChangeset)]
-#[table_name = "users"]
+#[diesel(table_name = users)]
 pub struct UserForm {
     pub name: Option<String>,
     pub company: Option<String>,
@@ -67,7 +67,7 @@ pub struct UserForm {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, AsChangeset, Insertable)]
-#[table_name = "skills"]
+#[diesel(table_name = skills)]
 pub struct SkillsForm {
     pub name: String,
     pub rating: i32,
@@ -147,7 +147,7 @@ impl From<SkillsForm> for NewSkill {
 
 #[derive(Debug, Deserialize, Serialize, Clone, Queryable, Identifiable)]
 #[diesel(table_name = skill_frequencies)]
-#[primary_key(name)]
+#[diesel(primary_key(name))]
 pub struct SkillFrequency {
     pub name: String,
     pub frequency: i32,

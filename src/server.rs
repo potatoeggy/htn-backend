@@ -1,26 +1,14 @@
 use diesel::prelude::*;
-use diesel::QueryDsl;
-use diesel::RunQueryDsl;
-use htn_backend::establish_connection;
-use htn_backend::models::NewSkill;
-use htn_backend::models::Skill;
-use htn_backend::models::SkillFrequency;
-use htn_backend::models::SkillsForm;
-use htn_backend::models::User;
-use htn_backend::models::UserForm;
-use htn_backend::models::UserWithSkills;
-use htn_backend::models::UserWithSkillsForm;
-use htn_backend::schema::skill_frequencies;
-use htn_backend::schema::skills;
-use htn_backend::schema::users;
-use htn_backend::update_user;
-use itertools::{Either, Itertools};
+use diesel::{QueryDsl, RunQueryDsl};
+use htn_backend::{
+    establish_connection,
+    models::{NewSkill, Skill, SkillFrequency, User, UserWithSkills, UserWithSkillsForm},
+    schema::{skill_frequencies, skills, users},
+    update_user, Config,
+};
 use serde::Deserialize;
 use tide::prelude::*;
-use tide::Next;
 use tide::Request;
-
-use htn_backend::Config;
 
 pub async fn start_server(config: Config) -> tide::Result<()> {
     let mut app = tide::with_state(config.clone());
@@ -38,7 +26,7 @@ pub async fn start_server(config: Config) -> tide::Result<()> {
 
 async fn users_get(req: Request<Config>) -> tide::Result {
     let config = req.state();
-    let conn = &mut establish_connection(&config);
+    let conn = &mut establish_connection(config);
     let users: Vec<(User, Option<Skill>)> = users::table
         .left_join(skills::table)
         .load::<(User, Option<Skill>)>(conn)
@@ -58,7 +46,7 @@ async fn skills_get(req: Request<Config>) -> tide::Result {
     let config = req.state();
     let params = req.query::<QueryParams>()?;
 
-    let conn = &mut establish_connection(&config);
+    let conn = &mut establish_connection(config);
     let res = skill_frequencies::table
         .select(skill_frequencies::all_columns)
         .filter(skill_frequencies::frequency.ge(params.min_freq.unwrap_or(0)))
@@ -70,7 +58,7 @@ async fn skills_get(req: Request<Config>) -> tide::Result {
 
 async fn user_one_get(req: Request<Config>) -> tide::Result {
     let config = req.state();
-    let conn = &mut establish_connection(&config);
+    let conn = &mut establish_connection(config);
 
     // TODO: properly handle errors (404)
     let id: i32 = req.param("id")?.parse()?;
@@ -95,7 +83,7 @@ async fn user_one_put<'a>(mut req: Request<Config>) -> tide::Result {
 
     let (user, skills) = data.into();
 
-    let conn = &mut establish_connection(&config);
+    let conn = &mut establish_connection(config);
 
     if let Some(skills) = skills {
         let skills_insert: Vec<NewSkill> = skills

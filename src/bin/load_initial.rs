@@ -4,9 +4,7 @@ use htn_backend::{
     models::{NewSkill, NewUser},
     Config,
 };
-use serde;
 use serde::Deserialize;
-use serde_json;
 
 #[derive(Deserialize)]
 struct JsonSkill {
