@@ -54,7 +54,7 @@ fn main() -> serde_json::Result<()> {
                 .iter()
                 .map(|skill| NewSkill {
                     user_id: i as i32 + 1, // dbs are 1-indexed
-                    skill: &skill.skill,
+                    skill: skill.skill.clone(),
                     rating: skill.rating,
                 })
                 .collect::<Vec<NewSkill>>()

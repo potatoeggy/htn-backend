@@ -80,30 +80,37 @@ async fn user_one_put<'a>(mut req: Request<Config>) -> tide::Result {
     let id: i32 = req.param("id")?.parse()?;
     let config = req.state();
 
-    let (user, mut skills) = data.into();
+    let (user, skills) = data.into();
 
     let conn = &mut establish_connection(&config);
-    let res = update_user(conn, id, user);
 
-    if let Some(mut skills) = skills {
-        let insert_and_update = skills
-            .iter()
+    if let Some(skills) = skills {
+        let skills_insert: Vec<NewSkill> = skills
+            .into_iter()
             .map(|skill| {
-                skill.user_id = Some(id);
-                let res: Result<&'a NewSkill, _> = skill.try_into();
-                res
+                let mut new_skill: NewSkill = skill.into();
+                new_skill.user_id = id;
+                new_skill
             })
-            .partition_map(|skill| match skill {
-                Ok(skill) => Either::Left(skill),
-                Err(_) => Either::Right(skill),
-            });
+            .collect();
 
-        let res = diesel::insert_into(skills::table)
-            .values(skills_insert)
-            .execute(conn)
-            .expect("Error inserting skills");
-        println!("Inserted {} skills", res);
+        // diesel doesn't support batched upserts so we have to
+        // make a lot of queries
+        // luckily usually you're not adding skills to a user
+
+        for skill in skills_insert {
+            let res = diesel::insert_into(skills::table)
+                .values(&skill)
+                .on_conflict((skills::skill, skills::user_id))
+                .do_update()
+                .set(&skill)
+                .execute(conn)
+                .expect("Error inserting skills");
+            println!("Inserted/updated {} skills", res);
+        }
     }
+
+    let res = update_user(conn, id, user);
     Ok(json!(res).into())
 }
 

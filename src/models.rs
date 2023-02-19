@@ -66,12 +66,11 @@ pub struct UserForm {
     pub phone: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, AsChangeset)]
+#[derive(Debug, Deserialize, Serialize, Clone, AsChangeset, Insertable)]
 #[table_name = "skills"]
 pub struct SkillsForm {
-    pub user_id: Option<i32>,
-    pub skill: Option<String>,
-    pub rating: Option<i32>,
+    pub skill: String,
+    pub rating: i32,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -117,45 +116,31 @@ impl<'a> From<&'a User> for NewUser<'a> {
     }
 }
 
-#[derive(Insertable, Debug, Deserialize, Serialize, Clone)]
+#[derive(Insertable, Debug, Deserialize, Serialize, Clone, AsChangeset)]
 #[diesel(table_name = skills)]
-pub struct NewSkill<'b> {
+pub struct NewSkill {
     pub user_id: i32,
-    pub skill: &'b str,
+    pub skill: String,
     pub rating: i32,
 }
 
-impl<'a> From<&'a Skill> for NewSkill<'a> {
-    fn from(skill: &'a Skill) -> Self {
+impl From<Skill> for NewSkill {
+    fn from(skill: Skill) -> Self {
         NewSkill {
             user_id: skill.user_id,
-            skill: &skill.skill,
+            skill: skill.skill,
             rating: skill.rating,
         }
     }
 }
 
-impl<'a> TryInto<NewSkill<'a>> for &'a SkillsForm {
-    type Error = &'static str;
-
-    fn try_into(self) -> Result<NewSkill<'a>, Self::Error> {
-        if self.user_id.is_none() {
-            return Err("user_id is required");
-        }
-
-        if self.skill.is_none() {
-            return Err("skill is required");
-        }
-
-        if self.rating.is_none() {
-            return Err("rating is required");
-        }
-
+impl From<SkillsForm> for NewSkill {
+    fn from(data: SkillsForm) -> NewSkill {
         // unwrap is safe because we checked for None above
-        Ok(NewSkill {
-            user_id: self.user_id.unwrap(),
-            skill: self.skill.as_ref().unwrap(),
-            rating: self.rating.unwrap(),
-        })
+        NewSkill {
+            user_id: -1,
+            skill: data.skill,
+            rating: data.rating,
+        }
     }
 }

@@ -6,7 +6,8 @@ create table skills (
   skill varchar(255) not null,
   rating int not null,
   created_at datetime not null default current_timestamp,
-  updated_at datetime not null default current_timestamp
+  updated_at datetime not null default current_timestamp,
+  unique (user_id, skill) on conflict replace
 );
 
 create table users (
