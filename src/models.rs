@@ -1,4 +1,4 @@
-use crate::schema::{skills, users};
+use crate::schema::{skill_frequencies, skills, users};
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -69,7 +69,7 @@ pub struct UserForm {
 #[derive(Debug, Deserialize, Serialize, Clone, AsChangeset, Insertable)]
 #[table_name = "skills"]
 pub struct SkillsForm {
-    pub skill: String,
+    pub name: String,
     pub rating: i32,
 }
 
@@ -120,7 +120,7 @@ impl<'a> From<&'a User> for NewUser<'a> {
 #[diesel(table_name = skills)]
 pub struct NewSkill {
     pub user_id: i32,
-    pub skill: String,
+    pub name: String,
     pub rating: i32,
 }
 
@@ -128,7 +128,7 @@ impl From<Skill> for NewSkill {
     fn from(skill: Skill) -> Self {
         NewSkill {
             user_id: skill.user_id,
-            skill: skill.skill,
+            name: skill.skill,
             rating: skill.rating,
         }
     }
@@ -139,8 +139,16 @@ impl From<SkillsForm> for NewSkill {
         // unwrap is safe because we checked for None above
         NewSkill {
             user_id: -1,
-            skill: data.skill,
+            name: data.name,
             rating: data.rating,
         }
     }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, Queryable, Identifiable)]
+#[diesel(table_name = skill_frequencies)]
+#[primary_key(name)]
+pub struct SkillFrequency {
+    pub name: String,
+    pub frequency: i32,
 }

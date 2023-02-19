@@ -6,7 +6,6 @@ use models::{NewSkill, UserForm};
 
 pub mod models;
 pub mod schema;
-pub mod utils;
 
 const DEFAULT_PORT: u32 = 8080;
 

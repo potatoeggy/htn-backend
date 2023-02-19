@@ -4,7 +4,7 @@ diesel::table! {
     skills (id) {
         id -> Integer,
         user_id -> Integer,
-        skill -> Text,
+        name -> Text,
         rating -> Integer,
         created_at -> Timestamp,
         updated_at -> Timestamp,
@@ -23,9 +23,13 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    skill_frequencies (name) {
+        name -> Text,
+        frequency -> Integer,
+    }
+}
+
 diesel::joinable!(skills -> users (user_id));
 
-diesel::allow_tables_to_appear_in_same_query!(
-    skills,
-    users,
-);
+diesel::allow_tables_to_appear_in_same_query!(skills, users,);

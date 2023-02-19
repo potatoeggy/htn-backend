@@ -4,15 +4,16 @@ use diesel::RunQueryDsl;
 use htn_backend::establish_connection;
 use htn_backend::models::NewSkill;
 use htn_backend::models::Skill;
+use htn_backend::models::SkillFrequency;
 use htn_backend::models::SkillsForm;
 use htn_backend::models::User;
 use htn_backend::models::UserForm;
 use htn_backend::models::UserWithSkills;
 use htn_backend::models::UserWithSkillsForm;
+use htn_backend::schema::skill_frequencies;
 use htn_backend::schema::skills;
 use htn_backend::schema::users;
 use htn_backend::update_user;
-use htn_backend::utils::partition_try;
 use itertools::{Either, Itertools};
 use serde::Deserialize;
 use tide::prelude::*;
@@ -47,14 +48,24 @@ async fn users_get(req: Request<Config>) -> tide::Result {
     Ok(json!(res).into())
 }
 
+#[derive(Deserialize)]
+struct QueryParams {
+    min_freq: Option<i32>,
+    max_freq: Option<i32>,
+}
+
 async fn skills_get(req: Request<Config>) -> tide::Result {
     let config = req.state();
-    let conn = &mut establish_connection(&config);
-    let skills = skills::table
-        .load::<Skill>(conn)
-        .expect("Error loading skills");
+    let params = req.query::<QueryParams>()?;
 
-    Ok(json!(skills).into())
+    let conn = &mut establish_connection(&config);
+    let res = skill_frequencies::table
+        .select(skill_frequencies::all_columns)
+        .filter(skill_frequencies::frequency.ge(params.min_freq.unwrap_or(0)))
+        .filter(skill_frequencies::frequency.le(params.max_freq.unwrap_or(std::i32::MAX)))
+        .load::<SkillFrequency>(conn)
+        .expect("Error loading skills");
+    Ok(json!(res).into())
 }
 
 async fn user_one_get(req: Request<Config>) -> tide::Result {
@@ -76,6 +87,8 @@ async fn user_one_get(req: Request<Config>) -> tide::Result {
 
 async fn user_one_put<'a>(mut req: Request<Config>) -> tide::Result {
     // TODO: properly handle errors (404)
+    // TODO: properly handle unchanged data
+    // it causes a panic right now and stops further processing
     let data: UserWithSkillsForm = req.body_json().await?;
     let id: i32 = req.param("id")?.parse()?;
     let config = req.state();
@@ -101,7 +114,7 @@ async fn user_one_put<'a>(mut req: Request<Config>) -> tide::Result {
         for skill in skills_insert {
             let res = diesel::insert_into(skills::table)
                 .values(&skill)
-                .on_conflict((skills::skill, skills::user_id))
+                .on_conflict((skills::name, skills::user_id))
                 .do_update()
                 .set(&skill)
                 .execute(conn)

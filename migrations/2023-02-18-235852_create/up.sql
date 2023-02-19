@@ -3,11 +3,11 @@
 create table skills (
   id integer not null primary key,
   user_id integer not null references users (id),
-  skill varchar(255) not null,
+  name varchar(255) not null,
   rating int not null,
   created_at datetime not null default current_timestamp,
   updated_at datetime not null default current_timestamp,
-  unique (user_id, skill) on conflict replace
+  unique (user_id, name) on conflict replace
 );
 
 create table users (
@@ -19,3 +19,11 @@ create table users (
   created_at datetime not null default current_timestamp,
   updated_at datetime not null default current_timestamp
 );
+
+create view skill_frequencies as
+  select
+    name,
+    count(*) as frequency
+  from skills
+  group by name
+  order by frequency desc;

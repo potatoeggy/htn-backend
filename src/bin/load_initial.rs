@@ -4,12 +4,14 @@ use htn_backend::{
     models::{NewSkill, NewUser},
     Config,
 };
+use serde;
 use serde::Deserialize;
 use serde_json;
 
 #[derive(Deserialize)]
 struct JsonSkill {
-    skill: String, // skill name, e.g., "Rust"
+    #[serde(rename = "skill")]
+    name: String, // skill name, e.g., "Rust"
     rating: i32,
 }
 
@@ -54,7 +56,7 @@ fn main() -> serde_json::Result<()> {
                 .iter()
                 .map(|skill| NewSkill {
                     user_id: i as i32 + 1, // dbs are 1-indexed
-                    skill: skill.skill.clone(),
+                    name: skill.name.clone(),
                     rating: skill.rating,
                 })
                 .collect::<Vec<NewSkill>>()

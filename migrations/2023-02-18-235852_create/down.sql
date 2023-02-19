@@ -2,3 +2,4 @@
 
 drop table users;
 drop table skills;
+drop view skill_frequencies;
