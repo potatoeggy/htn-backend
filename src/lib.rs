@@ -56,7 +56,7 @@ pub fn create_users(conn: &mut SqliteConnection, users: Vec<NewUser>) {
         .expect("Error saving new users");
 }
 
-pub fn update_user(conn: &mut SqliteConnection, id: i32, user: UserForm) -> UserWithSkills {
+pub fn update_user(conn: &mut SqliteConnection, id: i32, user: UserForm) -> Option<UserWithSkills> {
     if !user.is_empty() {
         diesel::update(schema::users::table.find(id))
             .set(&user)
@@ -70,7 +70,7 @@ pub fn update_user(conn: &mut SqliteConnection, id: i32, user: UserForm) -> User
         .load::<(User, Option<Skill>)>(conn)
         .expect("Error loading user");
 
-    to_users_with_skills(user).first().unwrap().clone()
+    to_users_with_skills(user).first().cloned()
 }
 
 pub fn create_skills(conn: &mut SqliteConnection, skills: Vec<NewSkill>) {
@@ -84,7 +84,11 @@ pub fn to_users_with_skills(data: Vec<(User, Option<Skill>)>) -> Vec<UserWithSki
     // convert (User, Skill)s to (User, Vec<Skill>)s
     let mut res: Vec<UserWithSkills> = vec![];
 
-    let mut prev = data[0].0.clone(); // mildly dangerous but we have checks
+    let prev_user = data.get(0);
+    if prev_user.is_none() {
+        return res;
+    }
+    let mut prev = prev_user.unwrap().0.clone(); // mildly dangerous but we have checks
     let mut current_skills: Vec<Skill> = vec![];
     for (user, skill) in data {
         if user.id != prev.id {

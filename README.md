@@ -1,6 +1,6 @@
 # htn-backend
 
-Written for the 2023 Hack the North backend challenge. Hello!
+Written for the 2023 Hack the North backend challenge and to play around with Rust. Hello!
 
 ## Usage
 

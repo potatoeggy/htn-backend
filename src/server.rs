@@ -84,13 +84,11 @@ async fn user_one_get(req: Request<Config>) -> tide::Result {
         .into_iter()
         .map(|f| f.into())
         .collect();
-    // there should be only one user
+    // there should be only one in the whole vec
     Ok(json!(res.first()).into())
 }
 
 async fn user_one_put<'a>(mut req: Request<Config>) -> tide::Result {
-    // TODO: properly handle unchanged data
-    // it causes a panic right now and stops further processing
     let data: Result<UserWithSkillsForm, _> = req.body_json().await;
     if data.is_err() {
         // 400
@@ -105,11 +103,16 @@ async fn user_one_put<'a>(mut req: Request<Config>) -> tide::Result {
     }
 
     let config = req.state();
-
-    let (user, skills) = data.unwrap().into();
-
     let conn = &mut establish_connection(config);
 
+    let user: Option<User> = users::table.find(id.unwrap()).first::<User>(conn).ok();
+
+    if user.is_none() {
+        // 404
+        return Ok(Response::new(StatusCode::NotFound));
+    }
+
+    let (user, skills) = data.unwrap().into();
     if let Some(skills) = skills {
         let skills_insert: Vec<NewSkill> = skills
             .into_iter()
@@ -135,6 +138,7 @@ async fn user_one_put<'a>(mut req: Request<Config>) -> tide::Result {
         }
     }
 
-    let res: ClientUserWithSkillsForm = update_user(conn, id.unwrap(), user).into();
+    // we already checked the id so it's safe to unwrap
+    let res: ClientUserWithSkillsForm = update_user(conn, id.unwrap(), user).unwrap().into();
     Ok(json!(res).into())
 }
