@@ -68,6 +68,15 @@ pub struct UserForm {
     pub phone: Option<String>,
 }
 
+impl UserForm {
+    pub fn is_empty(&self) -> bool {
+        self.name.is_none()
+            && self.company.is_none()
+            && self.email.is_none()
+            && self.phone.is_none()
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone, AsChangeset, Insertable)]
 #[diesel(table_name = skills)]
 pub struct SkillsForm {

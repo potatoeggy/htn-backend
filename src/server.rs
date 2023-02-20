@@ -1,14 +1,14 @@
 use diesel::prelude::*;
-use diesel::{QueryDsl, RunQueryDsl};
+use diesel::RunQueryDsl;
 use htn_backend::{
     establish_connection,
-    models::{NewSkill, Skill, SkillFrequency, User, UserWithSkills, UserWithSkillsForm},
+    models::{NewSkill, Skill, SkillFrequency, User, UserWithSkillsForm},
     schema::{skill_frequencies, skills, users},
-    update_user, Config,
+    to_users_with_skills, update_user, Config,
 };
 use serde::Deserialize;
-use tide::prelude::*;
 use tide::Request;
+use tide::{prelude::*, Response, StatusCode};
 
 pub async fn start_server(config: Config) -> tide::Result<()> {
     let mut app = tide::with_state(config.clone());
@@ -60,13 +60,21 @@ async fn user_one_get(req: Request<Config>) -> tide::Result {
     let config = req.state();
     let conn = &mut establish_connection(config);
 
-    // TODO: properly handle errors (404)
-    let id: i32 = req.param("id")?.parse()?;
+    let id = req.param("id")?.parse::<i32>().ok();
+    if id.is_none() {
+        // 404
+        return Ok(Response::new(StatusCode::NotFound));
+    }
+
     let user: Vec<_> = users::table
         .left_join(skills::table)
-        .filter(users::id.eq(id))
+        .filter(users::id.eq(id.unwrap()))
         .load::<(User, Option<Skill>)>(conn)
         .expect("Error loading user");
+    if user.is_empty() {
+        // 404
+        return Ok(Response::new(StatusCode::NotFound));
+    }
 
     let res = to_users_with_skills(user);
     // there should be only one user
@@ -74,14 +82,24 @@ async fn user_one_get(req: Request<Config>) -> tide::Result {
 }
 
 async fn user_one_put<'a>(mut req: Request<Config>) -> tide::Result {
-    // TODO: properly handle errors (404)
     // TODO: properly handle unchanged data
     // it causes a panic right now and stops further processing
-    let data: UserWithSkillsForm = req.body_json().await?;
-    let id: i32 = req.param("id")?.parse()?;
+    let data: Result<UserWithSkillsForm, _> = req.body_json().await;
+    if data.is_err() {
+        // 400
+        // doesn't this feel a lot like go?
+        return Ok(Response::new(StatusCode::BadRequest));
+    }
+
+    let id = req.param("id")?.parse::<i32>().ok();
+    if id.is_none() {
+        // 404
+        return Ok(Response::new(StatusCode::NotFound));
+    }
+
     let config = req.state();
 
-    let (user, skills) = data.into();
+    let (user, skills) = data.unwrap().into();
 
     let conn = &mut establish_connection(config);
 
@@ -90,7 +108,7 @@ async fn user_one_put<'a>(mut req: Request<Config>) -> tide::Result {
             .into_iter()
             .map(|skill| {
                 let mut new_skill: NewSkill = skill.into();
-                new_skill.user_id = id;
+                new_skill.user_id = id.unwrap();
                 new_skill
             })
             .collect();
@@ -110,28 +128,6 @@ async fn user_one_put<'a>(mut req: Request<Config>) -> tide::Result {
         }
     }
 
-    let res = update_user(conn, id, user);
+    let res = update_user(conn, id.unwrap(), user);
     Ok(json!(res).into())
-}
-
-fn to_users_with_skills(data: Vec<(User, Option<Skill>)>) -> Vec<UserWithSkills> {
-    // convert (User, Skill)s to (User, Vec<Skill>)s
-    let mut res: Vec<UserWithSkills> = vec![];
-
-    let mut prev = data[0].0.clone();
-    let mut current_skills: Vec<Skill> = vec![];
-    for (user, skill) in data {
-        if user.id != prev.id {
-            res.push(UserWithSkills::from((prev, current_skills)));
-            current_skills = vec![];
-        }
-
-        if let Some(skill) = skill {
-            current_skills.push(skill);
-        }
-        prev = user;
-    }
-    // push the last user
-    res.push(UserWithSkills::from((prev, current_skills)));
-    res
 }

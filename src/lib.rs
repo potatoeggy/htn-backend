@@ -3,7 +3,7 @@ pub mod schema;
 
 use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
-use models::{NewSkill, NewUser, User, UserForm};
+use models::{NewSkill, NewUser, Skill, User, UserForm, UserWithSkills};
 
 const DEFAULT_PORT: u32 = 8080;
 
@@ -56,11 +56,21 @@ pub fn create_users(conn: &mut SqliteConnection, users: Vec<NewUser>) {
         .expect("Error saving new users");
 }
 
-pub fn update_user(conn: &mut SqliteConnection, id: i32, user: UserForm) -> User {
-    diesel::update(schema::users::table.find(id))
-        .set(&user)
-        .get_result(conn)
-        .expect("Error updating user")
+pub fn update_user(conn: &mut SqliteConnection, id: i32, user: UserForm) -> UserWithSkills {
+    if !user.is_empty() {
+        diesel::update(schema::users::table.find(id))
+            .set(&user)
+            .execute(conn)
+            .expect("Error updating user");
+    }
+
+    let user: Vec<_> = schema::users::table
+        .left_join(schema::skills::table)
+        .filter(schema::users::id.eq(id))
+        .load::<(User, Option<Skill>)>(conn)
+        .expect("Error loading user");
+
+    to_users_with_skills(user).first().unwrap().clone()
 }
 
 pub fn create_skills(conn: &mut SqliteConnection, skills: Vec<NewSkill>) {
@@ -68,4 +78,26 @@ pub fn create_skills(conn: &mut SqliteConnection, skills: Vec<NewSkill>) {
         .values(&skills)
         .execute(conn)
         .expect("Error saving new skills");
+}
+
+pub fn to_users_with_skills(data: Vec<(User, Option<Skill>)>) -> Vec<UserWithSkills> {
+    // convert (User, Skill)s to (User, Vec<Skill>)s
+    let mut res: Vec<UserWithSkills> = vec![];
+
+    let mut prev = data[0].0.clone(); // mildly dangerous but we have checks
+    let mut current_skills: Vec<Skill> = vec![];
+    for (user, skill) in data {
+        if user.id != prev.id {
+            res.push(UserWithSkills::from((prev, current_skills)));
+            current_skills = vec![];
+        }
+
+        if let Some(skill) = skill {
+            current_skills.push(skill);
+        }
+        prev = user;
+    }
+    // push the last user
+    res.push(UserWithSkills::from((prev, current_skills)));
+    res
 }
