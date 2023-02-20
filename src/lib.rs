@@ -14,7 +14,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_env() -> Self {
+    pub fn init() -> Self {
         dotenv::dotenv().ok();
 
         let port = if let Ok(port) = std::env::var("PORT") {
@@ -54,19 +54,6 @@ pub fn create_users(conn: &mut SqliteConnection, users: Vec<NewUser>) {
         .values(&users)
         .execute(conn)
         .expect("Error saving new users");
-}
-
-pub fn get_user(conn: &mut SqliteConnection, id: i32) -> User {
-    schema::users::table
-        .find(id)
-        .first::<User>(conn)
-        .expect("Error loading user")
-}
-
-pub fn get_users(conn: &mut SqliteConnection) -> Vec<User> {
-    schema::users::table
-        .load::<User>(conn)
-        .expect("Error loading users")
 }
 
 pub fn update_user(conn: &mut SqliteConnection, id: i32, user: UserForm) -> User {

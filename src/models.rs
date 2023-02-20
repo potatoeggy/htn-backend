@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 // there is a disturbing amount of boilerplate here
 // that makes it annoying to add new fields to the models
 // you have to add them to the struct, the table, and the form
-// TODO: figure out how to reduce it
+// and then you have to add them to the From impls
 
 #[derive(Debug, Deserialize, Serialize, Clone, Queryable, Identifiable, Associations)]
 #[diesel(belongs_to(User))]
@@ -32,6 +32,7 @@ pub struct User {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct UserWithSkills {
+    // preferred output json format for the frontend
     pub id: i32,
     pub name: String,
     pub company: String,
@@ -60,6 +61,7 @@ impl From<(User, Vec<Skill>)> for UserWithSkills {
 #[derive(Debug, Deserialize, Serialize, Clone, AsChangeset)]
 #[diesel(table_name = users)]
 pub struct UserForm {
+    // preferred update json format to the database
     pub name: Option<String>,
     pub company: Option<String>,
     pub email: Option<String>,
@@ -69,12 +71,14 @@ pub struct UserForm {
 #[derive(Debug, Deserialize, Serialize, Clone, AsChangeset, Insertable)]
 #[diesel(table_name = skills)]
 pub struct SkillsForm {
+    // preferred update json format to the database
     pub name: String,
     pub rating: i32,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct UserWithSkillsForm {
+    // preferred input json format for the frontend
     pub name: Option<String>,
     pub company: Option<String>,
     pub email: Option<String>,
@@ -99,6 +103,7 @@ impl From<UserWithSkillsForm> for (UserForm, Option<Vec<SkillsForm>>) {
 #[derive(Insertable, Debug, Deserialize, Serialize, Clone)]
 #[diesel(table_name = users)]
 pub struct NewUser<'a> {
+    // preferred input json format to the database
     pub name: &'a str,
     pub company: &'a str,
     pub email: &'a str,
@@ -119,6 +124,7 @@ impl<'a> From<&'a User> for NewUser<'a> {
 #[derive(Insertable, Debug, Deserialize, Serialize, Clone, AsChangeset)]
 #[diesel(table_name = skills)]
 pub struct NewSkill {
+    // preferred input json format to the database
     pub user_id: i32,
     pub name: String,
     pub rating: i32,
@@ -136,9 +142,8 @@ impl From<Skill> for NewSkill {
 
 impl From<SkillsForm> for NewSkill {
     fn from(data: SkillsForm) -> NewSkill {
-        // unwrap is safe because we checked for None above
         NewSkill {
-            user_id: -1,
+            user_id: -1, // make compiler happy, we'll set it later
             name: data.name,
             rating: data.rating,
         }
@@ -149,6 +154,7 @@ impl From<SkillsForm> for NewSkill {
 #[diesel(table_name = skill_frequencies)]
 #[diesel(primary_key(name))]
 pub struct SkillFrequency {
+    // preferred output json format for the frontend
     pub name: String,
     pub frequency: i32,
 }

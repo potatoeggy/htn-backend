@@ -6,9 +6,10 @@ use htn_backend::{
 };
 use serde::Deserialize;
 
+// the json data is not in the same format as the database
 #[derive(Deserialize)]
 struct JsonSkill {
-    #[serde(rename = "skill")]
+    #[serde(rename = "skill")] // why >:(
     name: String, // skill name, e.g., "Rust"
     rating: i32,
 }
@@ -30,7 +31,7 @@ fn main() -> serde_json::Result<()> {
     // we could do it the waterloo way and use firstnamenumberlastname
     // or the lazy way and just use the id
 
-    let config = Config::from_env();
+    let config = Config::init();
     let conn = &mut establish_connection(&config);
 
     let new_users: Vec<NewUser> = data
@@ -44,8 +45,10 @@ fn main() -> serde_json::Result<()> {
         .collect();
     create_users(conn, new_users);
 
-    // TODO: WARN: this assumes that the users are inserted in order
+    // WARN: this assumes that the users are inserted in order
     // and that these are the first users inserted
+    // THEREFORE THIS WILL BREAK IF YOU RUN THIS MULTIPLE TIMES
+    // OR AFTER YOU INSERT OTHER USERS
     let new_skills: Vec<NewSkill> = data
         .iter()
         .enumerate()

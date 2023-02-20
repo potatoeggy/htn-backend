@@ -100,14 +100,13 @@ async fn user_one_put<'a>(mut req: Request<Config>) -> tide::Result {
         // luckily usually you're not adding skills to a user
 
         for skill in skills_insert {
-            let res = diesel::insert_into(skills::table)
+            diesel::insert_into(skills::table)
                 .values(&skill)
                 .on_conflict((skills::name, skills::user_id))
                 .do_update()
                 .set(&skill)
                 .execute(conn)
                 .expect("Error inserting skills");
-            println!("Inserted/updated {} skills", res);
         }
     }
 
@@ -116,12 +115,13 @@ async fn user_one_put<'a>(mut req: Request<Config>) -> tide::Result {
 }
 
 fn to_users_with_skills(data: Vec<(User, Option<Skill>)>) -> Vec<UserWithSkills> {
+    // convert (User, Skill)s to (User, Vec<Skill>)s
     let mut res: Vec<UserWithSkills> = vec![];
 
     let mut prev = data[0].0.clone();
     let mut current_skills: Vec<Skill> = vec![];
     for (user, skill) in data {
-        if user.id != prev.id && prev.id != -1 {
+        if user.id != prev.id {
             res.push(UserWithSkills::from((prev, current_skills)));
             current_skills = vec![];
         }
