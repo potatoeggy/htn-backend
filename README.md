@@ -28,11 +28,10 @@ Run in debug mode:
 cargo run --bin htn-backend
 ```
 
-Feel free to compile it if you want better performance:
+Feel free to build in release mode if you need that sweet, sweet performance:
 
 ```bash
-cargo build --release
-./target/release/htn-backend
+cargo run --bin htn-backend --release
 ```
 
 ## Details
