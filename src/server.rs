@@ -1,5 +1,6 @@
 use diesel::prelude::*;
 use diesel::RunQueryDsl;
+use htn_backend::models::ClientUserWithSkillsForm;
 use htn_backend::{
     establish_connection,
     models::{NewSkill, Skill, SkillFrequency, User, UserWithSkillsForm},
@@ -32,7 +33,10 @@ async fn users_get(req: Request<Config>) -> tide::Result {
         .load::<(User, Option<Skill>)>(conn)
         .expect("Error loading users");
 
-    let res = to_users_with_skills(users);
+    let res: Vec<ClientUserWithSkillsForm> = to_users_with_skills(users)
+        .into_iter()
+        .map(|f| f.into())
+        .collect();
     Ok(json!(res).into())
 }
 
@@ -47,7 +51,7 @@ async fn skills_get(req: Request<Config>) -> tide::Result {
     let params = req.query::<QueryParams>()?;
 
     let conn = &mut establish_connection(config);
-    let res = skill_frequencies::table
+    let res: Vec<SkillFrequency> = skill_frequencies::table
         .select(skill_frequencies::all_columns)
         .filter(skill_frequencies::frequency.ge(params.min_freq.unwrap_or(0)))
         .filter(skill_frequencies::frequency.le(params.max_freq.unwrap_or(std::i32::MAX)))
@@ -76,7 +80,10 @@ async fn user_one_get(req: Request<Config>) -> tide::Result {
         return Ok(Response::new(StatusCode::NotFound));
     }
 
-    let res = to_users_with_skills(user);
+    let res: Vec<ClientUserWithSkillsForm> = to_users_with_skills(user)
+        .into_iter()
+        .map(|f| f.into())
+        .collect();
     // there should be only one user
     Ok(json!(res.first()).into())
 }
@@ -128,6 +135,6 @@ async fn user_one_put<'a>(mut req: Request<Config>) -> tide::Result {
         }
     }
 
-    let res = update_user(conn, id.unwrap(), user);
+    let res: ClientUserWithSkillsForm = update_user(conn, id.unwrap(), user).into();
     Ok(json!(res).into())
 }

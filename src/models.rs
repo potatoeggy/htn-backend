@@ -58,6 +58,28 @@ impl From<(User, Vec<Skill>)> for UserWithSkills {
     }
 }
 
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct ClientUserWithSkillsForm {
+    // preferred output json format for the frontend
+    pub name: String,
+    pub company: String,
+    pub email: String,
+    pub phone: String,
+    pub skills: Vec<SkillsForm>,
+}
+
+impl From<UserWithSkills> for ClientUserWithSkillsForm {
+    fn from(user: UserWithSkills) -> Self {
+        ClientUserWithSkillsForm {
+            name: user.name,
+            company: user.company,
+            email: user.email,
+            phone: user.phone,
+            skills: user.skills.into_iter().map(|s| s.into()).collect(),
+        }
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone, AsChangeset)]
 #[diesel(table_name = users)]
 pub struct UserForm {
@@ -85,7 +107,16 @@ pub struct SkillsForm {
     pub rating: i32,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+impl From<Skill> for SkillsForm {
+    fn from(skill: Skill) -> Self {
+        SkillsForm {
+            name: skill.skill,
+            rating: skill.rating,
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct UserWithSkillsForm {
     // preferred input json format for the frontend
     pub name: Option<String>,
