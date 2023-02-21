@@ -34,6 +34,18 @@ Feel free to build in release mode if you need that sweet, sweet performance:
 cargo run --bin htn-backend --release
 ```
 
+## Endpoints
+
+Basically, all minimum expectations are complete.
+
+`GET /users` returns all users.
+
+`GET /users/:id` returns one user. Returns 404 if the user does not exist.
+
+`PUT /users/:id` allows partial/full updates of one user. Returns 404 if the user does not exist, or 400 if the request is malformed. Otherwise returns new user data.
+
+`GET /skills` returns a skill frequency distribution. Returns 400 if optional integer parameters `max_freq` or `min_freq` are not actually integers.
+
 ## Details
 
 This project was made to learn Rust, so it's not nearly as clean as I hoped it
@@ -45,7 +57,7 @@ I miss duck typing :(
 
 Codebase highlights:
 
-- `src/schema.rs`: generated type definitions for the ORM
+- `migrations/**/up.sql`: database schema
 - `src/main.rs`: main entrypoint
 - `src/bin/load_initial.rs`: initial migrations to copy sample data to the database
 - `src/models.rs`: the many, many different structs to deserialise or serialise to depending on the situation — I miss TS most here
