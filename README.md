@@ -64,7 +64,7 @@ Basically, all minimum expectations are complete.
 }
 ```
 
-`GET /users/:id` returns one user. Returns 404 if the user does not exist.
+`GET /users/:id` returns one user, where `id` is the `id`th user inserted into the database. Returns 404 if the user does not exist.
 
 ```json
 {
