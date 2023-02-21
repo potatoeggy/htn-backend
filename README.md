@@ -20,6 +20,14 @@ diesel setup
 cargo run --bin load_initial  # initial database migration
 ```
 
+### Test
+
+Run everything in `src/tests` via Cargo (ensure that the database is in a clean state, freshly migrated, for everything to pass):
+
+```bash
+cargo test
+```
+
 ### Run
 
 Run in debug mode:
@@ -40,11 +48,69 @@ Basically, all minimum expectations are complete.
 
 `GET /users` returns all users.
 
+```json
+{
+    "name": <string>,
+    "company": <string>,
+    "email": <string>,
+    "phone": <string>,
+    "skills": [
+        {
+            "name": <string>,
+            "rating": <int>
+        }
+    ],
+    ...
+}
+```
+
 `GET /users/:id` returns one user. Returns 404 if the user does not exist.
 
-`PUT /users/:id` allows partial/full updates of one user. Returns 404 if the user does not exist, or 400 if the request is malformed. Otherwise returns new user data.
+```json
+{
+    "name": <string>,
+    "company": <string>,
+    "email": <string>,
+    "phone": <string>,
+    "skills": [
+        {
+            "name": <string>,
+            "rating": <int>
+        },
+        ...
+    ]
+}
+```
 
-`GET /skills` returns a skill frequency distribution. Returns 400 if optional integer parameters `max_freq` or `min_freq` are not actually integers.
+`PUT /users/:id` allows partial/full updates of one user. Returns 404 if the user does not exist, or 400 if the request is malformed. Otherwise returns new user data. The schema below is for both the request and the response. All fields are optional, and omitted fields will not be updated.
+
+```json
+{
+    "name": <string>,
+    "company": <string>,
+    "email": <string>,
+    "phone": <string>,
+    "skills": [
+        {
+            "skill": <string>,
+            "rating": <int>
+        },
+        ...
+    ]
+}
+```
+
+`GET /skills` returns a skill frequency distribution. Returns 400 if optional integer parameters `max_freq` or `min_freq` (for maximum and minimum frequencies to be returned, respectively, inclusively) are not actually integers.
+
+```json
+[
+    {
+        "name": <string>,
+        "frequency": <int>
+    },
+    ...
+]
+```
 
 ## Details
 
@@ -60,7 +126,7 @@ Codebase highlights:
 - `migrations/**/up.sql`: database schema
 - `src/main.rs`: main entrypoint
 - `src/bin/load_initial.rs`: initial migrations to copy sample data to the database
-- `src/models.rs`: the many, many different structs to deserialise or serialise to depending on the situation — I miss TS most here
+- `src/models.rs`: the many, many different structs to deserialise or serialise to depending on the situation — I miss TS most here (or just a better ORM)
 - `src/server.rs`: REST endpoint functions
 - `src/lib.rs`: a bunch of helper functions as well as configuration handling
 
