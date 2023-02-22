@@ -92,7 +92,7 @@ Basically, all minimum expectations are complete.
     "phone": <string>,
     "skills": [
         {
-            "skill": <string>,
+            "name": <string>,
             "rating": <int>
         },
         ...
