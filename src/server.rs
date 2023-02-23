@@ -25,11 +25,39 @@ pub async fn start_server(config: Config) -> tide::Result<()> {
     Ok(())
 }
 
+#[derive(Deserialize)]
+struct UserQueryParams {
+    name: Option<String>,
+    company: Option<String>,
+    email: Option<String>,
+    has_skill: Option<Vec<String>>,
+}
+
 async fn users_get(req: Request<Config>) -> tide::Result {
     let config = req.state();
+    let params = req.query::<UserQueryParams>()?;
+
     let conn = &mut establish_connection(config);
-    let users: Vec<(User, Option<Skill>)> = users::table
-        .left_join(skills::table)
+
+    let mut query = users::table.left_join(skills::table).into_boxed();
+
+    if let Some(name) = params.name {
+        query = query.filter(users::name.like(format!("%{}%", name)));
+    }
+
+    if let Some(company) = params.company {
+        query = query.filter(users::company.like(format!("%{}%", company)));
+    }
+
+    if let Some(email) = params.email {
+        query = query.filter(users::email.like(format!("%{}%", email)));
+    }
+
+    if let Some(skills) = params.has_skill {
+        query = query.filter(skills::name.eq_any(skills));
+    }
+
+    let users: Vec<_> = query
         .load::<(User, Option<Skill>)>(conn)
         .expect("Error loading users");
 
@@ -41,14 +69,14 @@ async fn users_get(req: Request<Config>) -> tide::Result {
 }
 
 #[derive(Deserialize)]
-struct QueryParams {
+struct SkillQueryParams {
     min_freq: Option<i32>,
     max_freq: Option<i32>,
 }
 
 async fn skills_get(req: Request<Config>) -> tide::Result {
     let config = req.state();
-    let params = req.query::<QueryParams>()?;
+    let params = req.query::<SkillQueryParams>()?;
 
     let conn = &mut establish_connection(config);
     let res: Vec<SkillFrequency> = skill_frequencies::table

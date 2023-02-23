@@ -48,6 +48,15 @@ Basically, all minimum expectations are complete.
 
 `GET /users` returns all users.
 
+**Query parameters**:
+
+- `name`: filter by name (optional)
+- `company`: filter by company (optional)
+- `email`: filter by email (optional)
+- `has_skill[]`: contains any of the skills provided, can be repeated (optional)
+
+Returns 400 if any of the query parameters are invalid. If `has_skill[]` is provided, users that have at least one of the skills provided will be included with a `skills` response that only includes those that match the query.
+
 ```json
 {
     "name": <string>,
@@ -100,7 +109,14 @@ Basically, all minimum expectations are complete.
 }
 ```
 
-`GET /skills` returns a skill frequency distribution. Returns 400 if optional integer parameters `max_freq` or `min_freq` (for maximum and minimum frequencies to be returned, respectively, inclusively) are not actually integers.
+`GET /skills` returns a skill frequency distribution.
+
+**Query parameters:**
+
+- `max_freq`: maximum frequency to return (inclusive, optional)
+- `min_freq`: minimum frequency to return (inclusive, optional)
+
+Returns 400 if `max_freq` or `min_freq` are not integers.
 
 ```json
 [
