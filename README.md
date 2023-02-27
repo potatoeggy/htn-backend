@@ -2,6 +2,16 @@
 
 Written for the 2023 Hack the North backend challenge and to play around with Rust. Hello!
 
+## Stack
+
+- Rust
+- Diesel (ORM)
+- SQLite (in hindsight, I would have used Postgres)
+- Tide (web server framework)
+- REST (learning Rust + Diesel + Tide + GraphQL all at once would be a lovely experience, I'm sure, but I enjoy having time to study for midterms)
+
+The amazing library `serde` was almost enough to make me not regret choosing Rust. Almost.
+
 ## Usage
 
 Cargo and Rust 1.62+ must first be available on your system. [Here are some instructions to install them](https://doc.rust-lang.org/cargo/getting-started/installation.html) if you haven't already.
@@ -33,13 +43,13 @@ cargo test
 Run in debug mode:
 
 ```bash
-cargo run --bin htn-backend
+cargo run
 ```
 
 Feel free to build in release mode if you need that sweet, sweet performance:
 
 ```bash
-cargo run --bin htn-backend --release
+cargo run --release
 ```
 
 ## Endpoints
